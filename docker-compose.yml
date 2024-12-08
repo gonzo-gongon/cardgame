@@ -1,0 +1,49 @@
+services:
+  backend:
+    extends:
+      file: ./backend/deployments/compose.yml
+      service: backend
+  
+  frontend:
+    image: node:22
+    volumes:
+      - ./frontend:/app
+      - web-node-volume:/app/node_modules
+    working_dir: /app
+    tty: true
+  
+  database:
+    image: mysql:9
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: ${MYSQL_TIMEZONE}
+    ports:
+      - "${MYSQL_PORT}:${MYSQL_PORT}"
+    volumes:
+     - database-volume:/var/lib/mysql
+
+  # docker-compose run database_migration create -ext sql -dir ./migrations -seq create_<tablename>
+  database_migration:
+    image: migrate/migrate
+    depends_on:
+      - database
+    command:
+      - "-path=/migrations/"
+      - "-database=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(database:${MYSQL_PORT})/${MYSQL_DATABASE}"
+      - "up"
+    volumes:
+      - ./migrations:/migrations
+
+  # server:
+  #   image: nginx:latest
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+
+volumes:
+  database-volume:
+  web-node-volume:
