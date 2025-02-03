@@ -1,0 +1,9 @@
+[submodule "backend"]
+	path = backend
+	url = https://github.com/gonzo-gongon/cardgame-backend.git
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/gonzo-gongon/cardgame-frontend.git
+[submodule "migrations"]
+	path = migrations
+	url = https://github.com/gonzo-gongon/cardgame-migrations.git
