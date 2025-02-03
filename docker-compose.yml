@@ -1,14 +1,40 @@
 services:
+  # go test -parallel 3 original-card-game-backend/internal-test/...
+  # go get -u github.com/99designs/gqlgen && go run github.com/99designs/gqlgen generate
+  # mockgen -source=internal/infrastructure/repository/user_session_repository.go -destination=internal-test/infrastructure/repository/user_session_repository_mock.go -package=repository
   backend:
-    extends:
-      file: ./backend/deployments/compose.yml
-      service: backend
-  
+    image: golang:1.23
+    depends_on:
+      - database
+    working_dir: /usr/local/go/src/backend
+    tty: true
+    volumes:
+      - ./backend:/usr/local/go/src/backend
+      - backend-gocache:/go/bin
+    entrypoint: /bin/sh
+    command: | 
+      -c 
+      "
+      # golangci-lint や mockgen が未インストールなら初回インストール
+      if ! command -v golangci-lint > /dev/null 2>&1 || ! command -v mockgen > /dev/null 2>&1; then
+        echo 'Installing golangci-lint and mockgen...'
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+        go install go.uber.org/mock/mockgen@latest
+        go install github.com/go-delve/delve/cmd/dlv@latest
+      fi
+      # バージョン確認（動作確認）
+      golangci-lint --version
+      mockgen -version
+
+      # 対話的シェルとして待機（ここで必要なコマンドを実行可能）
+      exec /bin/sh
+      "
+
   frontend:
     image: node:22
     volumes:
       - ./frontend:/app
-      - web-node-volume:/app/node_modules
+      - frontend-node:/app/node_modules
     working_dir: /app
     tty: true
   
@@ -46,4 +72,5 @@ services:
 
 volumes:
   database-volume:
-  web-node-volume:
+  frontend-node:
+  backend-gocache:
